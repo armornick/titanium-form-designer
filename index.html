@@ -1,0 +1,370 @@
+<html>
+<head>
+    <title>titanium form designer</title>
+    <link rel="stylesheet" type="text/css" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/themes/blitzer/jquery-ui.css" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="jquery.mustache.js"></script>
+    <script type="text/javascript">
+    
+    // search index ::
+    // WIDGET OBJECT CREATION 
+    
+        formdata = {
+            "n": 1,
+            "bgcolor": "#fff"
+        }; // no var = part of the main document object
+        
+        // TODO: Mustache.js
+        templates = {
+        
+            "Window": "var win = Titanium.UI.createWindow({\n\ttitle:'{{title}}',\n\tbackgroundColor:'{{bgcolor}}'\n});\n\n",
+        
+            "Label": "var widget{{id}} = Ti.UI.createLabel({\n\ttext: '{{text}}',\n\tcolor: '{{color}}',\n\theight: {{&height}},\n\twidth: {{&width}}\n});\nwin.add(widget{{id}})\n\n",
+            
+            "Button": "var widget{{id}} = Ti.UI.createButton({\n\ttitle: '{{text}}',\n\tcolor: '{{color}}',\n\theight: {{&height}},\n\twidth: {{&width}}\n});\nwin.add(widget{{id}})\n\n",
+            
+            "TableView": "var widget{{id}} = new Titanium.UI.createTableView({\n\theaderTitle: '{{text}}',\n\tbackgroundColor: '{{color}}',\n\tdata: {{&source}}\n});\nwin.add(widget{{id}})\n\n",
+            
+            "TextField": "var widget{{id}} = Ti.UI.createTextField({\n\tvalue: '{{text}}'\n\tcolor: '{{color}}',\n\theight: {{&height}},\n\twidth: {{&width}},\n});\nwin.add(widget{{id}})\n\n",
+            
+            "TextArea": "var widget{{id}} = Ti.UI.createTextArea({\n\tcolor : '{{color}}',\n\tvalue : '{{text}}',\n\theight : {{&height}},\n\twidth : {{&width}},\n});\nwin.add(widget{{id}})\n\n",
+            
+            "ImageView": "var widget{{id}} = Ti.UI.createImageView({\n\timage:'{{text}}'\n});\nwin.add(widget{{id}})\n\n",
+            
+            "ClickHandler": "widget{{id}}.addEventListener('click',function(e)\n{\n{{&onclick}}\n});\n\n"
+        
+        }
+        
+        function randomString() {
+            return Math.random().toString(36).substring(7);
+        }
+        
+        function makeControl ( ) {
+            var id = this.attr("id"), text = this.text(),
+            obj = formdata[ id ],
+            template = templates[ obj.type ] ;
+            
+            if (obj.type == "Button" && obj.onclick) {
+                template += templates["ClickHandler"];
+            }
+            
+            return $.mustache( template , obj );
+        }
+        
+        function preDialogWidget( widgettype ) {
+            var color = "#000", widgetplacement = $("#dialog-form-warning");
+            
+            switch (widgettype) {
+                case "Button":
+                    $("<label></label>").attr("for", "buttononclick").attr("id", "buttononclick-label").text("onClick: ").insertBefore( widgetplacement );
+                    $("<textarea />").attr("id", "buttononclick")/*.attr("cols", "50")*/.attr("class", "ui-widget-content ui-corner-all").insertBefore( widgetplacement );
+                    break;
+                case "Label":
+                    break;
+                case "TextField":
+                    $("#widgettextlabel").text("Default Value: ");
+                    break;
+                case "TextArea":
+                    $("#widgettextlabel").text("Default Value: ");
+                    break;
+                case "ImageView":
+                    $("#widgettextlabel").text("Image Location: ");
+                    $("#widgetwidthlabel").hide(); $("#widgetwidth").hide(); $("#widgetheightlabel").hide(); $("#widgetheight").hide();
+                    break;
+                case "TableView":
+                    $("#widgettextlabel").text("Header Title: ");
+                    $("<label></label>").attr("for", "tablesource").attr("id", "tablesourcelabel").text("Source: ").insertBefore( widgetplacement );
+                    $("<input />").attr("type", "text").attr("id", "tablesource").attr("class", "ui-widget-content ui-corner-all").insertBefore( widgetplacement );
+                    $("#widgetwidthlabel").hide(); $("#widgetwidth").hide(); $("#widgetheightlabel").hide(); $("#widgetheight").hide();
+                    break;
+                default:
+                    break;
+            }
+            if ( widgettype != "ImageView" ) {
+            $("<label></label>").attr("for", "widgetcolor").attr("id", "widgetcolorlabel").text("Color: ").insertBefore( widgetplacement );
+            $("<input />").attr("type", "text").attr("id", "widgetcolor").attr("value", color).attr("class", "ui-widget-content ui-corner-all").insertBefore( widgetplacement );
+            }
+        }
+        
+        function preDialogExistingWidget( widgetid ) {
+            var obj = formdata[widgetid];
+            preDialogWidget( obj.type );
+            $("#widgetcolor").val(obj.color);
+            
+            switch (obj.type) {
+                case "Button":
+                    $("#buttononclick").val(obj.onclick);
+                    break;
+                case "Label":
+                    break;
+                case "TextField":
+                    break;
+                case "TextArea":
+                    break;
+                case "ImageView":
+                    break;
+                case "TableView":
+                    $("#tablesource").val(obj.source);
+                    break;
+                default:
+                    break;
+            }
+        }
+        
+        function postDialogWidget( widgetid ) {
+            var obj = formdata[widgetid];
+            
+            switch (obj.type) {
+                case "Button":
+                    //alert( $("#buttononclick").val() );
+                    obj.onclick = $("#buttononclick").val();
+                    break;
+                case "Label":
+                    break;
+                case "TextField":
+                    if ( ! $("#widgettext").val() ) obj.text = "";
+                    break;
+                case "TextArea":
+                    if ( ! $("#widgettext").val() ) obj.text = "";
+                    break;
+                case "ImageView":
+                    break;
+                case "TableView":
+                    obj.source = $("#tablesource").val();
+                    break;
+                default:
+                    break;
+            }
+            if ( obj.type != "ImageView" ) {
+                obj.color = $("#widgetcolor").val();
+            }
+        }
+        
+        $( function () {
+        
+                formdata.title = $("#screentitle").text()
+                
+                $(".control").each( function (i) {
+                    $(this).draggable({cursor: "move", revert: true, helper: "clone", snap: "#formdesign"});
+                    
+                    $( "<option ></option>" ).text( $(this).text() ).attr("value", $(this).text() ).appendTo( $("#widgettype") );
+                    ;
+                });
+                
+                $("#formdesign").droppable({
+                        activeClass: "ui-state-default",
+                        hoverClass: "ui-state-hover",
+                        accept: ":not(.ui-sortable-helper)",
+                        drop: function( event, ui ) {
+                        
+                            preDialogWidget( ui.draggable.text() );
+                            $("#widgettype").val(  ui.draggable.text()  );
+                            $( "#dialog-form" ).dialog( "open" );
+                            return false;
+                            
+                        }
+                }).sortable({
+                    items: "li:not(.placeholder)",
+                    sort: function() {
+                        // gets added unintentionally by droppable interacting with sortable
+                        // using connectWithSortable fixes this, but doesn't allow you to customize active/hoverClass options
+                        $( this ).removeClass( "ui-state-default" );
+                    }
+                });
+                
+                $("#iterateScreen").button().click( function() {
+                    var gen = "";
+                    gen += $.mustache( templates["Window"] , formdata )
+                    
+                    $("#formdesign").find("li").each( function (i) {
+                        gen += makeControl.call( $(this) );
+                    });
+                    
+                    $("#formgen").text(gen).show();
+                    
+                    return false;
+                });
+                
+                $("#dialog-form").dialog({
+                    autoOpen: false,/*
+                    height: 300, */
+                    width: 640, 
+                    modal: true,
+                    
+                    buttons: {
+                        "Add": function () {
+                            var widgettext = $("#widgettext"),
+                            formdesign = $("#formdesign"),
+                            text = widgettext.val() == "" ? randomString() : widgettext.val(),
+                            widgetidcache = $("#widgetid"),
+                            widgetidval = widgetidcache.val(),
+                            widgetid = widgetidval ? widgetidval : formdata.n++;
+                            //alert(text);
+                            
+                            formdesign.find( ".placeholder" ).remove();
+                            formdesign.find( "#" + widgetid ).remove();
+                            
+                            $( "<li></li>" ).text( text ).attr("id", widgetid).click(function () {
+                                var id = $(this).attr("id"),
+                                text = $(this).text();
+                                
+                                widgettext.val(text); widgetidcache.val(id);
+                                $("#widgettype").val( formdata[id].type );
+                                $("#widgetheight").val( formdata[id].height );
+                                $("#widgetwidth").val( formdata[id].width );
+                                
+                                preDialogExistingWidget( id );
+                                $( "#dialog-form" ).dialog( "open" );
+                            }).appendTo( $(formdesign) );
+                            
+                            var widgetheight = $("#widgetheight").val(),
+                            widgetwidth = $("#widgetwidth").val();
+                            
+                            // WIDGET OBJECT CREATION 
+                            formdata[widgetid] = {}
+                            formdata[widgetid].id = widgetid;
+                            formdata[widgetid].text = text;
+                            formdata[widgetid].type = $("#widgettype").val();
+                            formdata[widgetid].height = !widgetheight || isNaN( widgetheight )  ? "'auto'" : widgetheight ;
+                            formdata[widgetid].width = !widgetwidth || isNaN( widgetwidth )  ? "'auto'" :  widgetwidth ;
+                            postDialogWidget( widgetid );
+                            
+                            $( this ).dialog( "close" );
+                            
+                        },
+                        Cancel: function() {
+                            $( this ).dialog( "close" );
+                            
+                        }
+                    },
+                    
+                    close: function () {
+                        var widgettext = $("#widgettext"), widgetidcache = $("#widgetid");
+                        widgettext.val(""); widgetidcache.val(""); $("#widgettextlabel").text("Text: ");
+                        $("#widgetheight").val("auto"); $("#widgetwidth").val("auto");
+                        $("#widgetcolor").remove(); $("#widgetcolorlabel").remove();
+                        $("#buttononclick").remove(); $("#buttononclick-label").remove();
+                        $("#tablesource").remove(); $("#tablesourcelabel").remove();
+                        $("#widgetwidthlabel").show(); $("#widgetwidth").show(); $("#widgetheightlabel").show(); $("#widgetheight").show();
+                    }
+                    
+                });
+                
+                $("#screen-props").dialog({
+                    autoOpen: false,
+                    modal: true,
+                    
+                    buttons: {
+                    
+                        "Apply": function () {
+                            
+                            $("#screentitle").text( $("#screen-title").val() );
+                            $( this ).dialog( "close" );
+                            formdata.title = $("#screentitle").text();
+                            formdata.bgcolor = $("#screen-bgcolor").val();
+                        },
+                        
+                        "Cancel": function () {
+                            $( this ).dialog( "close" );
+                            $("#screen-title").val( $("#screentitle").text() );
+                        }
+                    
+                    }
+                });
+                
+                $("#formgen").hide();
+                $("#docslink").button();
+                
+                $("#screen-title").val( $("#screentitle").text() );
+                $("#screen-bgcolor").val( formdata.bgcolor );
+                
+                $("#screentitle").click( function() {
+                    $("#screen-props").dialog("open");
+                });
+        });
+    </script>
+</head>
+<body>
+
+    <div id="dialog-form" title="Add a Widget to the Screen">
+        <form>
+        <fieldset>
+            <input id="widgetid" type="hidden" value="" />
+            <label for="widgettext" id="widgettextlabel">Text: </label>
+            <input type="text" name="widgettext" id="widgettext" class="ui-widget-content ui-corner-all" /> <br />
+            <label for="widgettype">Widget type: </label>
+            <select name="widgettype" id="widgettype" class="ui-widget-content ui-corner-all"></select><br />
+            <label for="widgetheight" id="widgetheightlabel">Height: </label>
+            <input type="text" name="widgetheight" id="widgetheight" class="ui-widget-content ui-corner-all" value="auto" /><br />
+            <label for="widgetwidth" id="widgetwidthlabel">Width: </label>
+            <input type="text" name="widgetwidth" id="widgetwidth" class="ui-widget-content ui-corner-all" value="auto" /><br />
+            <p id="dialog-form-warning">Note: do NOT press Enter to submit this form</p>
+        </fieldset>
+        </form>
+    </div>
+    
+    <div id="screen-props" title="Screen Properties">
+        <form>
+        <fieldset>
+            <label for="screen-title">Window Title: </label>
+            <input type="text" name="screen-title" id="screen-title" class="ui-widget-content ui-corner-all" /> <br />
+            <label for="screen-bgcolor">Background Color: </label>
+            <input type="text" name="screen-bgcolor" id="screen-bgcolor" class="ui-widget-content ui-corner-all" /><br />
+            <p id="screen-props-warning">Note: do NOT press Enter to submit this form</p>
+        </fieldset>
+        </form>
+    </div>
+
+    <div id="container">
+        <div id="header">
+            <h1>
+                Titanium Form Designer
+            </h1>
+        </div>
+        
+<!--
+        <div id="navigation">
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#">Contact us</a></li>
+            </ul>
+        </div>
+-->        
+        
+        <div id="content-container1">
+            <div id="content-container2">
+                <div id="section-navigation">
+                    <a id="docslink" href="http://docs.appcelerator.com" target="_blank">Titanium Documentation</a>
+                    <ul>
+                        <li class="control ui-widget-content">Label</li>
+                        <li class="control ui-widget-content">Button</li>
+                        <li class="control ui-widget-content">TextField</li>
+                        <li class="control ui-widget-content">TextArea</li>
+                        <li class="control ui-widget-content">ImageView</li>
+                        <li class="control ui-widget-content">TableView</li>
+                    </ul>
+                </div>
+                <div id="content">
+                    <h2 id="screentitle" class="ui-widget-header">Your Screen</h2>
+                    <ul id="formdesign" class="ui-widget-content">
+                        <li class="placeholder">Drop elements from the left here to build your screen</li>
+                    </ul>
+                </div>
+                <div id="aside">
+                    <form>
+                        <input type="submit" value="Generate UI Code" id="iterateScreen"><br />
+                        <textarea id="formgen" rows="20" cols="50" readonly="readonly"></textarea>
+                    </form>
+                </div>
+                <div id="footer">
+                    Copyright © armornick, 2012
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
